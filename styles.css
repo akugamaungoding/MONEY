@@ -381,6 +381,25 @@ th {
   background: #fff !important;
 }
 
+.container {
+  max-width: 980px;
+  margin: 36px auto 36px auto;
+  background: #fff;
+  border-radius: 22px;
+  box-shadow: 0 8px 32px #1565c022, 0 1.5px 8px #7b1fa244;
+  padding: 36px 32px 32px 32px;
+  min-height: 420px;
+  position: relative;
+}
+@media (max-width: 900px) {
+  .container {
+    max-width: 98vw;
+    padding: 16px 4vw 18px 4vw;
+    margin: 18px 2vw 18px 2vw;
+    min-height: 220px;
+  }
+}
+
 @media (max-width: 900px) {
   .main-header {
     flex-direction: column;
