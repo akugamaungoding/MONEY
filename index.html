@@ -374,11 +374,11 @@ let chatHistory = [];
 function renderAssizt() {
   tabContent.innerHTML = `
     <div style="max-width:520px;margin:0 auto;">
-      <h2 style="color:#ffffff;">Assizt Chatbot</h2>
+      <h2 style="color:#FFFFFF;">Assizt Chatbot</h2>
       <div id="chatHistory" style="min-height:180px;background:#f7fbff;border-radius:12px;padding:18px 12px 12px 12px;box-shadow:0 2px 8px #1565c022;margin-bottom:12px;max-height:320px;overflow-y:auto;"></div>
       <div style="display:flex;gap:8px;">
-        <input id="chatInput" type="text" placeholder="Ask something..." style="flex:1;border-radius:8px;border:1.5px solid #bbdefb;padding:10px 12px;font-size:1em;outline:none;background:#fff;color:#1565c0;">
-        <button class="btn" id="chatSendBtn">Send</button>
+        <input id="chatInput" type="text" placeholder="Ask a question..." style="flex:1;border-radius:8px;border:1.5px solid #bbdefb;padding:10px 12px;font-size:1em;outline:none;background:#fff;color:#1565c0;">
+        <button class="btn" id="chatSendBtn">Ask</button>
         <button class="btn" id="chatVoiceBtn" style="background:#ff4081;">🎤</button>
       </div>
     </div>
@@ -390,9 +390,44 @@ function renderAssizt() {
 }
 function updateChatHistory() {
   const chatDiv = document.getElementById('chatHistory');
-  chatDiv.innerHTML = chatHistory.map(msg => `<div style="margin-bottom:8px;"><b style="color:${msg.who==='user'?'#1565c0':'#7b1fa2'};">${msg.who==='user'?'You':'Bot'}:</b> <span>${msg.text}</span></div>`).join('');
+  chatDiv.innerHTML = chatHistory.map(msg => {
+    let sqlBlock = '';
+    if (msg.showSQL) {
+      sqlBlock = `<div style="font-family:monospace;font-size:0.98em;background:#f5faff;border-radius:8px;padding:10px 8px;margin-top:8px;color:#1976d2;overflow-x:auto;">
+        ${generateCreateTableSQL()}<br><br>${generateInsertSQL()}
+      </div>`;
+    }
+    if (msg.type === 'table') {
+      return `<div style="margin-bottom:8px;"><b style="color:${msg.who==='user'?'#1565c0':'#7b1fa2'};">${msg.who==='user'?'You':'Bot'}:</b> <span>${msg.text}</span><br>${msg.table}${sqlBlock}</div>`;
+    } else if (msg.type === 'chart') {
+      return `<div style="margin-bottom:8px;"><b style="color:${msg.who==='user'?'#1565c0':'#7b1fa2'};">${msg.who==='user'?'You':'Bot'}:</b> <span>${msg.text}</span><br><canvas id="chatChart${msg.chartId}" style="max-width:320px;min-height:160px;"></canvas><div style="font-size:0.95em;color:#888;margin-top:4px;">${msg.query}</div>${sqlBlock}</div>`;
+    } else if (msg.type === 'number') {
+      return `<div style="margin-bottom:8px;"><b style="color:${msg.who==='user'?'#1565c0':'#7b1fa2'};">${msg.who==='user'?'You':'Bot'}:</b> <span style="font-size:1.3em;font-weight:bold;color:#43a047;">${msg.number}</span><div style="font-size:0.95em;color:#888;margin-top:4px;">${msg.query}</div>${sqlBlock}</div>`;
+    } else if (msg.type === 'sql') {
+      return `<div style="margin-bottom:8px;"><b style="color:#7b1fa2;">Bot (SQL):</b> <span style="font-family:monospace;">${msg.query}</span></div>`;
+    } else {
+      return `<div style="margin-bottom:8px;"><b style="color:${msg.who==='user'?'#1565c0':'#7b1fa2'};">${msg.who==='user'?'You':'Bot'}:</b> <span>${msg.text}</span></div>`;
+    }
+  }).join('');
+  // Render chart if any
+  chatHistory.forEach(msg => {
+    if (msg.type === 'chart' && msg.chartConfig) {
+      setTimeout(() => {
+        new Chart(document.getElementById('chatChart'+msg.chartId).getContext('2d'), msg.chartConfig);
+      }, 100);
+    }
+  });
   chatDiv.scrollTop = chatDiv.scrollHeight;
 }
+function generateCreateTableSQL() {
+  return `CREATE TABLE transactions (\n  ID INT,\n  Name VARCHAR(64),\n  Qty INT,\n  UnitPrice INT,\n  Amount INT\n);`;
+}
+function generateInsertSQL() {
+  if (!window.manageItems || !manageItems.length) return '-- No data --';
+  const rows = manageItems.map(item => `(${item.id}, '${item.name.replace(/'/g, "''")}', ${item.qty}, ${item.unitPrice}, ${item.amount})`).join(',\n  ');
+  return `INSERT INTO transactions (ID, Name, Qty, UnitPrice, Amount) VALUES\n  ${rows};`;
+}
+let chartIdCounter = 0;
 function sendChat() {
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
@@ -401,8 +436,8 @@ function sendChat() {
   input.value = '';
   updateChatHistory();
   setTimeout(() => {
-    const botReply = fakeBotReply(text);
-    chatHistory.push({ who: 'bot', text: botReply });
+    const botMsg = fakeAssiztBot(text);
+    chatHistory.push(botMsg);
     updateChatHistory();
   }, 500);
 }
@@ -411,7 +446,7 @@ function startChatVoice() {
   btn.textContent = '⏳';
   btn.disabled = true;
   const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = 'id-ID';
+  recognition.lang = 'en-US';
   recognition.onresult = function(event) {
     document.getElementById('chatInput').value = event.results[0][0].transcript;
     btn.textContent = '🎤';
@@ -423,15 +458,51 @@ function startChatVoice() {
   };
   recognition.start();
 }
-function fakeBotReply(text) {
-  if (text.toLowerCase().includes('total')) return 'Total pengeluaran kamu bulan ini Rp 1.200.000';
-  if (text.toLowerCase().includes('makanan')) return 'Pengeluaran makanan minggu ini Rp 320.000';
-  return 'Simulasi jawaban bot: pertanyaan belum didukung.';
+function fakeAssiztBot(text) {
+  chartIdCounter++;
+  const lower = text.toLowerCase();
+  if (lower.includes('trend')) {
+    return {
+      who: 'bot',
+      type: 'chart',
+      text: 'Here is your expense trend:',
+      chartId: chartIdCounter,
+      chartConfig: {
+        type: 'line',
+        data: {
+          labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+          datasets: [{ label: 'Expenses', data: [120, 90, 150, 80, 200, 170, 100], backgroundColor: '#90caf9', borderColor: '#1565c0', fill: true }]
+        },
+        options: { animation: { duration: 1200 }, plugins: { legend: { display: false } } }
+      },
+      query: 'SELECT Date, SUM(Amount) FROM transactions GROUP BY Date',
+      showSQL: true
+    };
+  } else if (lower.includes('highest') || lower.includes('most') || lower.includes('max')) {
+    return {
+      who: 'bot',
+      type: 'table',
+      text: 'Highest expense this week:',
+      table: `<table class="tableview"><thead><tr><th>Category</th><th>Amount</th></tr></thead><tbody><tr><td>Food</td><td>$200</td></tr></tbody></table>`,
+      query: 'SELECT Category, SUM(Amount) FROM transactions WHERE week = THIS_WEEK GROUP BY Category ORDER BY SUM(Amount) DESC LIMIT 1',
+      showSQL: true
+    };
+  } else if (lower.includes('total')) {
+    return {
+      who: 'bot',
+      type: 'number',
+      number: '$1,200',
+      query: 'SELECT SUM(Amount) FROM transactions',
+      showSQL: true
+    };
+  } else {
+    return { who: 'bot', text: 'Sorry, I cannot answer that yet.' };
+  }
 }
 
 // --- Challenge Tab ---
 function renderChallenge() {
-  // Hitung progress
+  // Calculate progress
   let xp = Math.min(100, (dailyLogCount*10 + categoryCutAmount*2));
   let level = 'Bronze';
   if (xp >= 80) level = 'Diamond';
@@ -441,8 +512,8 @@ function renderChallenge() {
     <h2 style="color:#ffffff;">Challenge Progress</h2>
     <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${xp}%;"></div></div>
     <div style="margin-bottom:18px;font-weight:bold;color:#7b1fa2;">Level: ${level} (${xp} XP)</div>
-    <div class="challenge-target ${challengeState.streak>=5?'done':''}">✔️ Catat pengeluaran 5 hari berturut</div>
-    <div class="challenge-target ${challengeState.foodCut?'done':''}">🍔 Kurangi pengeluaran makanan 20%</div>
+    <div class="challenge-target ${challengeState.streak>=5?'done':''}">✔️ Add transaction today</div>
+    <div class="challenge-target ${challengeState.foodCut?'done':''}">🍔 Reduce food expenses by 20%</div>
     <canvas id="buildingCanvas" width="220" height="180" class="building-canvas"></canvas>
   `;
   animateBuilding(xp);
