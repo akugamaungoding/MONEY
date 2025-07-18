@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Outcomes Neatly Elevate Yourself</title>
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Tesseract.js -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js"></script>
+  <style>
+    /* Modern CSS, responsive, animasi halus */
+    html, body { height: 100%; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(180deg, #fff 0%, #1565c0 30%, #000 100%); }
+    .main-header { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 0 0 36px; min-height: 68px; background: linear-gradient(90deg, #1565c0 0%, #7b1fa2 100%); box-shadow: 0 4px 24px #0002; }
+    .app-name { color: #fff; font-size: 1.25em; font-weight: bold; letter-spacing: 0.02em; text-shadow: 0 2px 8px #0003; white-space: nowrap; padding-right: 24px; }
+    .tab-bar { display: flex; flex-direction: row; justify-content: flex-end; align-items: center; gap: 0; background: none; border-bottom: none; min-height: 68px; padding: 0 48px 0 0; box-shadow: none; }
+    .tab-btn { background: none; color: #fff; border: none; outline: none; padding: 0 24px; height: 68px; font-size: 1.08em; font-weight: 600; letter-spacing: 0.01em; border-radius: 0; box-shadow: none; transition: color 0.18s, background 0.18s; cursor: pointer; position: relative; top: 0; display: flex; align-items: center; }
+    .tab-btn:not(:last-child) { border-right: 1.5px solid rgba(255,255,255,0.18); }
+    .tab-btn.active { color: #ffe082; }
+    .tab-btn.active::after { content: ''; position: absolute; left: 12px; right: 12px; bottom: 10px; height: 5px; background: linear-gradient(90deg, #ffe082 0%, #ff4081 100%); border-radius: 3px 3px 0 0; box-shadow: 0 2px 12px #ffecb366; transition: all 0.2s; }
+    .tab-btn:hover:not(.active) { background: rgba(255,255,255,0.08); color: #ffe082; }
+    .tab-content { margin-top: 0; border-radius: 0 0 18px 18px; background: rgba(255,255,255,0.92); box-shadow: 0 8px 32px #1565c022; min-height: 320px; padding: 32px 24px; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.5s; }
+    .tableview { width: 100%; border-collapse: collapse; margin: 24px 0; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px #1565c022; }
+    .tableview th, .tableview td { padding: 12px 16px; border-bottom: 1px solid #e3e8f0; text-align: left; }
+    .tableview th { background: #f5faff; color: #1565c0; font-weight: 600; }
+    .tableview tr:last-child td { border-bottom: none; }
+    .btn { background: #1565c0; color: #fff; border: none; border-radius: 6px; padding: 8px 18px; font-size: 1em; font-weight: 500; cursor: pointer; transition: background 0.18s; }
+    .btn:hover { background: #7b1fa2; }
+    .popup { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(21,101,192,0.12); display: flex; align-items: center; justify-content: center; z-index: 999; }
+    .popup-content { background: #fff; border-radius: 16px; padding: 32px 24px; min-width: 320px; max-width: 90vw; box-shadow: 0 8px 32px #1565c044; animation: fadeIn 0.3s; }
+    .close-btn { background: #ff4081; color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 1.2em; cursor: pointer; position: absolute; top: 16px; right: 16px; }
+    .progress-bar-bg { width: 100%; height: 24px; background: #e3e8f0; border-radius: 12px; overflow: hidden; margin: 24px 0; }
+    .progress-bar-fill { height: 100%; border-radius: 12px; background: linear-gradient(90deg, #cd7f32 0%, #b0bec5 40%, #ffd700 70%, #00e5ff 100%); transition: width 0.7s cubic-bezier(.4,2,.6,1); }
+    .challenge-target { margin: 18px 0; padding: 12px 18px; background: #f5faff; border-radius: 8px; box-shadow: 0 2px 8px #1565c012; display: flex; align-items: center; gap: 12px; font-size: 1.05em; }
+    .challenge-target.done { background: #ffe082; color: #222; font-weight: bold; }
+    .building-canvas { display: block; margin: 0 auto; background: #e3f0ff; border-radius: 12px; box-shadow: 0 2px 12px #1565c022; }
+    .ocr-img-preview { max-width: 180px; max-height: 120px; border-radius: 8px; margin: 8px 0; box-shadow: 0 2px 8px #1565c022; }
+    @media (max-width: 900px) { .main-header { flex-direction: column; align-items: stretch; padding-left: 0; min-height: 96px; } .app-name { padding: 16px 0 0 0; text-align: center; } .tab-bar { justify-content: center; padding: 0 0 0 0; min-height: 56px; } .tab-btn { padding: 0 8px; font-size: 0.98em; height: 56px; } .tab-btn.active::after { left: 4px; right: 4px; height: 3px; bottom: 6px; } }
+  </style>
+</head>
+<body>
+  <header class="main-header">
+    <div id="appName" class="app-name">Manage Outcomes Neatly Elevate Yourself</div>
+    <nav id="tabBar"></nav>
+  </header>
+  <div id="tabContent"></div>
+  <div id="popupContainer"></div>
+  <script>
+// --- Data & State ---
+let transactions = [];
+let categories = [];
+let totalExpense = 0;
+let chartInstance = null;
+let dailyLogCount = 0;
+let categoryCutAmount = 0;
+let challengeState = { streak: 0, foodCut: false };
+
+// --- Tab Navigation ---
+const tabs = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'manage', label: 'Manage' },
+  { id: 'assizt', label: 'Assizt' },
+  { id: 'challenge', label: 'Challenge' }
+];
+const tabBar = document.getElementById('tabBar');
+const tabContent = document.getElementById('tabContent');
+const popupContainer = document.getElementById('popupContainer');
+
+function renderTabBar() {
+  tabBar.innerHTML = '';
+  tabBar.className = 'tab-bar';
+  tabs.forEach(tab => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn';
+    btn.textContent = tab.label;
+    btn.onclick = () => selectTab(tab.id);
+    btn.id = 'tabBtn_' + tab.id;
+    tabBar.appendChild(btn);
+  });
+}
+
+function selectTab(tabId) {
+  tabs.forEach(tab => {
+    document.getElementById('tabBtn_' + tab.id).classList.toggle('active', tab.id === tabId);
+  });
+  tabContent.classList.remove('fade-in');
+  setTimeout(() => {
+    tabContent.innerHTML = '';
+    if (tabId === 'dashboard') renderDashboard();
+    else if (tabId === 'manage') renderManage();
+    else if (tabId === 'assizt') renderAssizt();
+    else if (tabId === 'challenge') renderChallenge();
+    tabContent.classList.add('fade-in');
+  }, 120);
+}
+
+// --- Dashboard Tab ---
+function renderDashboard() {
+  tabContent.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:32px;">
+      <div style="flex:1;min-width:220px;">
+        <h2 style="color:#1565c0;margin-bottom:8px;">Total Pengeluaran</h2>
+        <div id="totalExpense" style="font-size:2.2em;font-weight:bold;color:#7b1fa2;">-</div>
+        <input type="file" id="excelInput" accept=".xlsx,.xls" style="margin-top:18px;">
+      </div>
+      <div style="flex:2;min-width:320px;">
+        <canvas id="expenseChart" style="max-width:420px;min-height:220px;"></canvas>
+      </div>
+    </div>
+  `;
+  document.getElementById('excelInput').addEventListener('change', handleExcelUpload);
+  if (transactions.length > 0) updateDashboardChart();
+}
+
+function handleExcelUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const data = new Uint8Array(evt.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(sheet);
+    transactions = json;
+    categories = [...new Set(transactions.map(t => t.Kategori))];
+    totalExpense = transactions.reduce((sum, t) => sum + (parseFloat(t.Jumlah) || 0), 0);
+    document.getElementById('totalExpense').textContent = 'Rp ' + totalExpense.toLocaleString();
+    updateDashboardChart();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function updateDashboardChart() {
+  const ctx = document.getElementById('expenseChart').getContext('2d');
+  const dataByCategory = {};
+  transactions.forEach(t => {
+    if (!dataByCategory[t.Kategori]) dataByCategory[t.Kategori] = 0;
+    dataByCategory[t.Kategori] += parseFloat(t.Jumlah) || 0;
+  });
+  const labels = Object.keys(dataByCategory);
+  const data = Object.values(dataByCategory);
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: [
+          '#1565c0','#7b1fa2','#ff4081','#ffe082','#00e5ff','#43a047','#fbc02d','#d84315'
+        ],
+        borderWidth: 2
+      }]
+    },
+    options: {
+      animation: { animateScale: true, duration: 1200 },
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+  document.getElementById('totalExpense').textContent = 'Rp ' + totalExpense.toLocaleString();
+}
+
+// --- Manage Tab ---
+function renderManage() {
+  tabContent.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;">
+      <h2 style="color:#1565c0;">Daftar Transaksi</h2>
+      <button class="btn" id="addDataBtn">Add Data</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="tableview" id="transTable">
+        <thead><tr><th>Tanggal</th><th>Kategori</th><th>Jumlah</th><th>Deskripsi</th><th>Action</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('addDataBtn').onclick = showAddDataForm;
+  updateTransTable();
+}
+
+function updateTransTable() {
+  const tbody = document.querySelector('#transTable tbody');
+  tbody.innerHTML = '';
+  transactions.forEach((t, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${t.Tanggal || '-'}</td>
+      <td>${t.Kategori || '-'}</td>
+      <td>Rp ${(parseFloat(t.Jumlah)||0).toLocaleString()}</td>
+      <td>${t.Deskripsi || '-'}</td>
+      <td><button class="btn" onclick="showDetailPopup(${i})">Detail</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+window.showDetailPopup = function(idx) {
+  const t = transactions[idx];
+  popupContainer.innerHTML = `
+    <div class="popup" onclick="closePopup(event)">
+      <div class="popup-content" onclick="event.stopPropagation()">
+        <button class="close-btn" onclick="closePopup(event)">&times;</button>
+        <h3>Detail Transaksi</h3>
+        <div><b>Tanggal:</b> ${t.Tanggal || '-'}</div>
+        <div><b>Kategori:</b> ${t.Kategori || '-'}</div>
+        <div><b>Jumlah:</b> Rp ${(parseFloat(t.Jumlah)||0).toLocaleString()}</div>
+        <div><b>Deskripsi:</b> ${t.Deskripsi || '-'}</div>
+      </div>
+    </div>
+  `;
+}
+window.closePopup = function(e) {
+  popupContainer.innerHTML = '';
+}
+
+function showAddDataForm() {
+  popupContainer.innerHTML = `
+    <div class="popup" onclick="closePopup(event)">
+      <div class="popup-content" onclick="event.stopPropagation()">
+        <button class="close-btn" onclick="closePopup(event)">&times;</button>
+        <h3>Tambah Data Transaksi</h3>
+        <input type="file" id="ocrImgInput" accept="image/*"><br>
+        <img id="ocrImgPreview" class="ocr-img-preview" style="display:none;"/>
+        <textarea id="ocrResult" rows="3" style="width:100%;margin:8px 0;" placeholder="Hasil OCR..." ></textarea>
+        <input type="text" id="addTanggal" placeholder="Tanggal" style="width:100%;margin:4px 0;">
+        <input type="text" id="addKategori" placeholder="Kategori" style="width:100%;margin:4px 0;">
+        <input type="number" id="addJumlah" placeholder="Jumlah" style="width:100%;margin:4px 0;">
+        <input type="text" id="addDeskripsi" placeholder="Deskripsi" style="width:100%;margin:4px 0;">
+        <button class="btn" id="addItemBtn">Add Item</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('ocrImgInput').onchange = handleOCRImage;
+  document.getElementById('addItemBtn').onclick = addManualItem;
+}
+
+function handleOCRImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    document.getElementById('ocrImgPreview').src = evt.target.result;
+    document.getElementById('ocrImgPreview').style.display = 'block';
+    Tesseract.recognize(evt.target.result, 'eng').then(({ data: { text } }) => {
+      document.getElementById('ocrResult').value = text.trim();
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function addManualItem() {
+  const tgl = document.getElementById('addTanggal').value;
+  const kat = document.getElementById('addKategori').value;
+  const jml = document.getElementById('addJumlah').value;
+  const desc = document.getElementById('addDeskripsi').value;
+  transactions.push({ Tanggal: tgl, Kategori: kat, Jumlah: jml, Deskripsi: desc });
+  closePopup();
+  updateTransTable();
+}
+
+// --- Assizt Tab ---
+function renderAssizt() {
+  tabContent.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:32px;">
+      <div style="flex:1;min-width:220px;max-width:320px;">
+        <h2 style="color:#1565c0;">Assizt</h2>
+        <textarea id="assiztInput" rows="3" style="width:100%;margin-bottom:8px;" placeholder="Tulis perintah atau pertanyaan..."></textarea>
+        <button class="btn" id="assiztBtn">Kirim</button>
+        <button class="btn" id="recBtn" style="background:#ff4081;margin-left:8px;">🎤 Rekam</button>
+      </div>
+      <div id="assiztResult" style="flex:2;min-width:320px;"></div>
+    </div>
+  `;
+  document.getElementById('assiztBtn').onclick = handleAssizt;
+  document.getElementById('recBtn').onclick = handleSpeech;
+}
+
+function handleAssizt() {
+  const input = document.getElementById('assiztInput').value.toLowerCase();
+  const resultDiv = document.getElementById('assiztResult');
+  const fake = fakeResponse(input);
+  if (fake.type === 'table') {
+    resultDiv.innerHTML = `<table class="tableview"><thead><tr>${fake.headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${fake.rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  } else if (fake.type === 'chart') {
+    resultDiv.innerHTML = `<canvas id="assiztChart" style="max-width:420px;min-height:220px;"></canvas>`;
+    setTimeout(()=>{
+      new Chart(document.getElementById('assiztChart').getContext('2d'), fake.chartConfig);
+    }, 100);
+  } else {
+    resultDiv.innerHTML = `<div style="font-size:1.1em;color:#1565c0;">${fake.text}</div>`;
+  }
+}
+
+function handleSpeech() {
+  const recBtn = document.getElementById('recBtn');
+  recBtn.textContent = '⏳ Rekam...';
+  recBtn.disabled = true;
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = 'id-ID';
+  recognition.onresult = function(event) {
+    document.getElementById('assiztInput').value = event.results[0][0].transcript;
+    recBtn.textContent = '🎤 Rekam';
+    recBtn.disabled = false;
+  };
+  recognition.onerror = function() {
+    recBtn.textContent = '🎤 Rekam';
+    recBtn.disabled = false;
+  };
+  recognition.start();
+}
+
+function fakeResponse(input) {
+  if (input.includes('pengeluaran') && input.includes('makanan')) {
+    return {
+      type: 'chart',
+      chartConfig: {
+        type: 'bar',
+        data: {
+          labels: ['Makanan', 'Transport', 'Lainnya'],
+          datasets: [{ label: 'Pengeluaran', data: [1200000, 800000, 400000], backgroundColor: ['#ff4081','#1565c0','#7b1fa2'] }]
+        },
+        options: { animation: { duration: 1200 }, plugins: { legend: { display: false } } }
+      }
+    };
+  } else if (input.includes('tampilkan') && input.includes('transaksi')) {
+    return {
+      type: 'table',
+      headers: ['Tanggal','Kategori','Jumlah'],
+      rows: [ ['2024-05-01','Makanan','Rp 50.000'], ['2024-05-02','Transport','Rp 20.000'] ]
+    };
+  } else {
+    return { type: 'text', text: 'Simulasi jawaban AI: Data tidak ditemukan.' };
+  }
+}
+
+// --- Challenge Tab ---
+function renderChallenge() {
+  // Hitung progress
+  let xp = Math.min(100, (dailyLogCount*10 + categoryCutAmount*2));
+  let level = 'Bronze';
+  if (xp >= 80) level = 'Diamond';
+  else if (xp >= 60) level = 'Gold';
+  else if (xp >= 40) level = 'Silver';
+  tabContent.innerHTML = `
+    <h2 style="color:#1565c0;">Challenge Progress</h2>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${xp}%;"></div></div>
+    <div style="margin-bottom:18px;font-weight:bold;color:#7b1fa2;">Level: ${level} (${xp} XP)</div>
+    <div class="challenge-target ${challengeState.streak>=5?'done':''}">✔️ Catat pengeluaran 5 hari berturut</div>
+    <div class="challenge-target ${challengeState.foodCut?'done':''}">🍔 Kurangi pengeluaran makanan 20%</div>
+    <canvas id="buildingCanvas" width="220" height="180" class="building-canvas"></canvas>
+  `;
+  animateBuilding(xp);
+}
+
+function animateBuilding(xp) {
+  const ctx = document.getElementById('buildingCanvas').getContext('2d');
+  ctx.clearRect(0,0,220,180);
+  // Gedung naik sesuai XP
+  const h = 40 + Math.round(120 * xp/100);
+  ctx.fillStyle = '#1565c0';
+  ctx.fillRect(90,180-h,40,h);
+  ctx.fillStyle = '#ffe082';
+  ctx.fillRect(100,180-h+10,20,20);
+  ctx.fillStyle = '#7b1fa2';
+  ctx.fillRect(110,180-h+40,8,20);
+  // Level badge
+  ctx.font = 'bold 1.1em Segoe UI';
+  ctx.fillStyle = '#ff4081';
+  ctx.fillText('🏆', 100, 180-h+5);
+}
+
+// --- Init ---
+renderTabBar();
+selectTab('dashboard');
+  </script>
+</body>
+</html> 
