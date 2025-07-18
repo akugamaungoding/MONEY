@@ -12,8 +12,8 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js"></script>
   <style>
     /* Modern CSS, responsive, animasi halus */
-    html, body { height: 100%; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(180deg, #fff 0%, #1565c0 30%, #000 100%); }
-    .main-header { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 0 0 36px; min-height: 68px; background: linear-gradient(90deg, #1565c0 0%, #7b1fa2 100%); box-shadow: 0 4px 24px #0002; }
+    html, body { height: 100%; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(180deg, #06048b 30%, #000 100%); }
+    .main-header { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 0 0 36px; min-height: 68px; background: linear-gradient(90deg, #1565c0 0%, #080170 100%); box-shadow: 0 4px 24px #0002; }
     .app-name { color: #fff; font-size: 1.25em; font-weight: bold; letter-spacing: 0.02em; text-shadow: 0 2px 8px #0003; white-space: nowrap; padding-right: 24px; }
     .tab-bar { display: flex; flex-direction: row; justify-content: flex-end; align-items: center; gap: 0; background: none; border-bottom: none; min-height: 68px; padding: 0 48px 0 0; box-shadow: none; }
     .tab-btn { background: none; color: #fff; border: none; outline: none; padding: 0 24px; height: 68px; font-size: 1.08em; font-weight: 600; letter-spacing: 0.01em; border-radius: 0; box-shadow: none; transition: color 0.18s, background 0.18s; cursor: pointer; position: relative; top: 0; display: flex; align-items: center; }
@@ -47,10 +47,12 @@
     <div id="appName" class="app-name">Manage Outcomes Neatly Elevate Yourself</div>
     <nav id="tabBar"></nav>
   </header>
-  <div class="container">
-    <div id="tabContent"></div>
-    <div id="popupContainer"></div>
-  </div>
+  <main>
+    <div class="main-container">
+      <div id="tabContent"></div>
+      <div id="popupContainer"></div>
+    </div>
+  </main>
   <script>
 // --- Data & State ---
 let transactions = [];
@@ -105,9 +107,8 @@ function renderDashboard() {
   tabContent.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:32px;">
       <div style="flex:1;min-width:220px;">
-        <h2 style="color:#1565c0;margin-bottom:8px;">Total Pengeluaran</h2>
+        <h2 style="color:#ffffff;margin-bottom:8px;">Total Expenses</h2>
         <div id="totalExpense" style="font-size:2.2em;font-weight:bold;color:#7b1fa2;">-</div>
-        <input type="file" id="excelInput" accept=".xlsx,.xls" style="margin-top:18px;">
       </div>
       <div style="flex:2;min-width:320px;">
         <canvas id="expenseChart" style="max-width:420px;min-height:220px;"></canvas>
@@ -167,37 +168,105 @@ function updateDashboardChart() {
 }
 
 // --- Manage Tab ---
+let manageItems = [];
 function renderManage() {
   tabContent.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;">
-      <h2 style="color:#1565c0;">Daftar Transaksi</h2>
+      <h2 style="color:#ffffff;">Manage Data</h2>
       <button class="btn" id="addDataBtn">Add Data</button>
     </div>
     <div style="overflow-x:auto;">
-      <table class="tableview" id="transTable">
-        <thead><tr><th>Tanggal</th><th>Kategori</th><th>Jumlah</th><th>Deskripsi</th><th>Action</th></tr></thead>
+      <table class="tableview" id="manageTable">
+        <thead><tr><th>ID</th><th>Name</th><th>Qty</th><th>Unit Price</th><th>Amount</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   `;
-  document.getElementById('addDataBtn').onclick = showAddDataForm;
-  updateTransTable();
+  document.getElementById('addDataBtn').onclick = showAddDataPopup;
+  updateManageTable();
 }
-
-function updateTransTable() {
-  const tbody = document.querySelector('#transTable tbody');
+function updateManageTable() {
+  const tbody = document.querySelector('#manageTable tbody');
   tbody.innerHTML = '';
-  transactions.forEach((t, i) => {
+  manageItems.forEach((item, i) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${t.Tanggal || '-'}</td>
-      <td>${t.Kategori || '-'}</td>
-      <td>Rp ${(parseFloat(t.Jumlah)||0).toLocaleString()}</td>
-      <td>${t.Deskripsi || '-'}</td>
-      <td><button class="btn" onclick="showDetailPopup(${i})">Detail</button></td>
+      <td>${item.id}</td>
+      <td contenteditable="true" oninput="window.updateManageItem(${i},'name',this.textContent)">${item.name}</td>
+      <td contenteditable="true" oninput="window.updateManageItem(${i},'qty',this.textContent)">${item.qty}</td>
+      <td contenteditable="true" oninput="window.updateManageItem(${i},'unitPrice',this.textContent)">${item.unitPrice}</td>
+      <td contenteditable="true" oninput="window.updateManageItem(${i},'amount',this.textContent)">${item.amount}</td>
     `;
     tbody.appendChild(tr);
   });
+}
+window.updateManageItem = function(idx, key, val) {
+  if (key === 'qty' || key === 'unitPrice' || key === 'amount') {
+    manageItems[idx][key] = Number(val.replace(/[^\d.]/g, ''));
+  } else {
+    manageItems[idx][key] = val;
+  }
+};
+function showAddDataPopup() {
+  popupContainer.innerHTML = `
+    <div class="popup" onclick="closePopup(event)">
+      <div class="popup-content" onclick="event.stopPropagation()">
+        <button class="close-btn" onclick="closePopup(event)">&times;</button>
+        <h3>Upload Receipt (OCR)</h3>
+        <input type="file" id="ocrImgInputManage" accept="image/*"><br>
+        <img id="ocrImgPreviewManage" class="ocr-img-preview" style="display:none;"/>
+        <textarea id="ocrResultManage" rows="5" style="width:100%;margin:8px 0;" placeholder="OCR Result..."></textarea>
+        <button class="btn" id="parseOcrBtn">Parse to Table</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('ocrImgInputManage').onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      document.getElementById('ocrImgPreviewManage').src = evt.target.result;
+      document.getElementById('ocrImgPreviewManage').style.display = 'block';
+      Tesseract.recognize(evt.target.result, 'eng').then(({ data: { text } }) => {
+        document.getElementById('ocrResultManage').value = text.trim();
+        // Auto-parse after OCR
+        parseOcrAndFillTable(text.trim());
+        closePopup();
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+  document.getElementById('parseOcrBtn').onclick = function() {
+    const text = document.getElementById('ocrResultManage').value;
+    parseOcrAndFillTable(text);
+    closePopup();
+  };
+}
+function parseOcrAndFillTable(text) {
+  manageItems = parseOcrToItems(text);
+  updateManageTable();
+}
+function parseOcrToItems(text) {
+  // Parsing otomatis dari hasil OCR ke array item
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  let items = [];
+  let id = 1;
+  for (let i = 0; i < lines.length; i++) {
+    const name = lines[i];
+    const detail = lines[i+1] || '';
+    const m = detail.match(/(\d+)x?\s*#?([\d.,]+)\s+([\d.,]+)/);
+    if (m) {
+      items.push({
+        id: id++,
+        name,
+        qty: parseInt(m[1]) || 1,
+        unitPrice: Number(m[2].replace(/[^\d.]/g, '')),
+        amount: Number(m[3].replace(/[^\d.]/g, ''))
+      });
+      i++;
+    }
+  }
+  return items;
 }
 
 window.showDetailPopup = function(idx) {
@@ -228,10 +297,10 @@ function showAddDataForm() {
         <input type="file" id="ocrImgInput" accept="image/*"><br>
         <img id="ocrImgPreview" class="ocr-img-preview" style="display:none;"/>
         <textarea id="ocrResult" rows="3" style="width:100%;margin:8px 0;" placeholder="Hasil OCR..." ></textarea>
-        <input type="text" id="addTanggal" placeholder="Tanggal" style="width:100%;margin:4px 0;">
-        <input type="text" id="addKategori" placeholder="Kategori" style="width:100%;margin:4px 0;">
-        <input type="number" id="addJumlah" placeholder="Jumlah" style="width:100%;margin:4px 0;">
-        <input type="text" id="addDeskripsi" placeholder="Deskripsi" style="width:100%;margin:4px 0;">
+        <input type="text" id="addTanggal" placeholder="Date" style="width:100%;margin:4px 0;">
+        <input type="text" id="addKategori" placeholder="Category" style="width:100%;margin:4px 0;">
+        <input type="number" id="addJumlah" placeholder="Amount" style="width:100%;margin:4px 0;">
+        <input type="text" id="addDeskripsi" placeholder="Description" style="width:100%;margin:4px 0;">
         <button class="btn" id="addItemBtn">Add Item</button>
       </div>
     </div>
@@ -264,79 +333,100 @@ function addManualItem() {
   updateTransTable();
 }
 
-// --- Assizt Tab ---
+// --- Add Tab ---
+function renderAdd() {
+  tabContent.innerHTML = `
+    <h2 style="color:#1565c0;">Add Data via OCR</h2>
+    <input type="file" id="ocrImgInputAdd" accept="image/*" class="btn"><br>
+    <img id="ocrImgPreviewAdd" class="ocr-img-preview" style="display:none;"/>
+    <textarea id="ocrResultAdd" rows="3" style="width:100%;margin:8px 0;" placeholder="Hasil OCR..."></textarea>
+    <input type="text" id="addTanggal2" placeholder="Date" style="width:100%;margin:4px 0;">
+    <input type="text" id="addKategori2" placeholder="Category" style="width:100%;margin:4px 0;">
+    <input type="number" id="addJumlah2" placeholder="Amount" style="width:100%;margin:4px 0;">
+    <input type="text" id="addDeskripsi2" placeholder="Description" style="width:100%;margin:4px 0;">
+    <button class="btn" id="addItemBtn2">Add Item</button>
+  `;
+  document.getElementById('ocrImgInputAdd').onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      document.getElementById('ocrImgPreviewAdd').src = evt.target.result;
+      document.getElementById('ocrImgPreviewAdd').style.display = 'block';
+      Tesseract.recognize(evt.target.result, 'eng').then(({ data: { text } }) => {
+        document.getElementById('ocrResultAdd').value = text.trim();
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+  document.getElementById('addItemBtn2').onclick = function() {
+    const tgl = document.getElementById('addTanggal2').value;
+    const kat = document.getElementById('addKategori2').value;
+    const jml = document.getElementById('addJumlah2').value;
+    const desc = document.getElementById('addDeskripsi2').value;
+    transactions.push({ Tanggal: tgl, Kategori: kat, Jumlah: jml, Deskripsi: desc });
+    alert('Data added!');
+  };
+}
+
+// --- Assizt Tab (Chatbot Bubble) ---
+let chatHistory = [];
 function renderAssizt() {
   tabContent.innerHTML = `
-    <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:32px;">
-      <div style="flex:1;min-width:220px;max-width:320px;">
-        <h2 style="color:#1565c0;">Assizt</h2>
-        <textarea id="assiztInput" rows="3" style="width:100%;margin-bottom:8px;" placeholder="Tulis perintah atau pertanyaan..."></textarea>
-        <button class="btn" id="assiztBtn">Kirim</button>
-        <button class="btn" id="recBtn" style="background:#ff4081;margin-left:8px;">🎤 Rekam</button>
+    <div style="max-width:520px;margin:0 auto;">
+      <h2 style="color:#ffffff;">Assizt Chatbot</h2>
+      <div id="chatHistory" style="min-height:180px;background:#f7fbff;border-radius:12px;padding:18px 12px 12px 12px;box-shadow:0 2px 8px #1565c022;margin-bottom:12px;max-height:320px;overflow-y:auto;"></div>
+      <div style="display:flex;gap:8px;">
+        <input id="chatInput" type="text" placeholder="Ask something..." style="flex:1;border-radius:8px;border:1.5px solid #bbdefb;padding:10px 12px;font-size:1em;outline:none;background:#fff;color:#1565c0;">
+        <button class="btn" id="chatSendBtn">Send</button>
+        <button class="btn" id="chatVoiceBtn" style="background:#ff4081;">🎤</button>
       </div>
-      <div id="assiztResult" style="flex:2;min-width:320px;"></div>
     </div>
   `;
-  document.getElementById('assiztBtn').onclick = handleAssizt;
-  document.getElementById('recBtn').onclick = handleSpeech;
+  updateChatHistory();
+  document.getElementById('chatSendBtn').onclick = sendChat;
+  document.getElementById('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+  document.getElementById('chatVoiceBtn').onclick = startChatVoice;
 }
-
-function handleAssizt() {
-  const input = document.getElementById('assiztInput').value.toLowerCase();
-  const resultDiv = document.getElementById('assiztResult');
-  const fake = fakeResponse(input);
-  if (fake.type === 'table') {
-    resultDiv.innerHTML = `<table class="tableview"><thead><tr>${fake.headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${fake.rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-  } else if (fake.type === 'chart') {
-    resultDiv.innerHTML = `<canvas id="assiztChart" style="max-width:420px;min-height:220px;"></canvas>`;
-    setTimeout(()=>{
-      new Chart(document.getElementById('assiztChart').getContext('2d'), fake.chartConfig);
-    }, 100);
-  } else {
-    resultDiv.innerHTML = `<div style="font-size:1.1em;color:#1565c0;">${fake.text}</div>`;
-  }
+function updateChatHistory() {
+  const chatDiv = document.getElementById('chatHistory');
+  chatDiv.innerHTML = chatHistory.map(msg => `<div style="margin-bottom:8px;"><b style="color:${msg.who==='user'?'#1565c0':'#7b1fa2'};">${msg.who==='user'?'You':'Bot'}:</b> <span>${msg.text}</span></div>`).join('');
+  chatDiv.scrollTop = chatDiv.scrollHeight;
 }
-
-function handleSpeech() {
-  const recBtn = document.getElementById('recBtn');
-  recBtn.textContent = '⏳ Rekam...';
-  recBtn.disabled = true;
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  chatHistory.push({ who: 'user', text });
+  input.value = '';
+  updateChatHistory();
+  setTimeout(() => {
+    const botReply = fakeBotReply(text);
+    chatHistory.push({ who: 'bot', text: botReply });
+    updateChatHistory();
+  }, 500);
+}
+function startChatVoice() {
+  const btn = document.getElementById('chatVoiceBtn');
+  btn.textContent = '⏳';
+  btn.disabled = true;
   const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
   recognition.lang = 'id-ID';
   recognition.onresult = function(event) {
-    document.getElementById('assiztInput').value = event.results[0][0].transcript;
-    recBtn.textContent = '🎤 Rekam';
-    recBtn.disabled = false;
+    document.getElementById('chatInput').value = event.results[0][0].transcript;
+    btn.textContent = '🎤';
+    btn.disabled = false;
   };
   recognition.onerror = function() {
-    recBtn.textContent = '🎤 Rekam';
-    recBtn.disabled = false;
+    btn.textContent = '🎤';
+    btn.disabled = false;
   };
   recognition.start();
 }
-
-function fakeResponse(input) {
-  if (input.includes('pengeluaran') && input.includes('makanan')) {
-    return {
-      type: 'chart',
-      chartConfig: {
-        type: 'bar',
-        data: {
-          labels: ['Makanan', 'Transport', 'Lainnya'],
-          datasets: [{ label: 'Pengeluaran', data: [1200000, 800000, 400000], backgroundColor: ['#ff4081','#1565c0','#7b1fa2'] }]
-        },
-        options: { animation: { duration: 1200 }, plugins: { legend: { display: false } } }
-      }
-    };
-  } else if (input.includes('tampilkan') && input.includes('transaksi')) {
-    return {
-      type: 'table',
-      headers: ['Tanggal','Kategori','Jumlah'],
-      rows: [ ['2024-05-01','Makanan','Rp 50.000'], ['2024-05-02','Transport','Rp 20.000'] ]
-    };
-  } else {
-    return { type: 'text', text: 'Simulasi jawaban AI: Data tidak ditemukan.' };
-  }
+function fakeBotReply(text) {
+  if (text.toLowerCase().includes('total')) return 'Total pengeluaran kamu bulan ini Rp 1.200.000';
+  if (text.toLowerCase().includes('makanan')) return 'Pengeluaran makanan minggu ini Rp 320.000';
+  return 'Simulasi jawaban bot: pertanyaan belum didukung.';
 }
 
 // --- Challenge Tab ---
@@ -348,7 +438,7 @@ function renderChallenge() {
   else if (xp >= 60) level = 'Gold';
   else if (xp >= 40) level = 'Silver';
   tabContent.innerHTML = `
-    <h2 style="color:#1565c0;">Challenge Progress</h2>
+    <h2 style="color:#ffffff;">Challenge Progress</h2>
     <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${xp}%;"></div></div>
     <div style="margin-bottom:18px;font-weight:bold;color:#7b1fa2;">Level: ${level} (${xp} XP)</div>
     <div class="challenge-target ${challengeState.streak>=5?'done':''}">✔️ Catat pengeluaran 5 hari berturut</div>

@@ -30,16 +30,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       tabContent.innerHTML = '';
       if (tabId === 'dashboard') {
-        tabContent.innerHTML = '<div style="padding:48px;text-align:center;font-size:2em;color:#1565c0;">Dashboard</div>';
-      } else {
-        const tab = tabs.find(t => t.id === tabId);
-        if (tab.img) {
-          const img = document.createElement('img');
-          img.src = tab.img;
-          img.alt = tab.label + ' UI';
-          img.style = 'max-width:100%;border-radius:18px;box-shadow:0 4px 24px #1565c022;margin:32px auto;display:block;';
-          tabContent.appendChild(img);
-        }
+        renderDashboard();
+      } else if (tabId === 'manage') {
+        renderManage();
+      } else if (tabId === 'assizt') {
+        renderAssizt();
+      } else if (tabId === 'challenge') {
+        renderChallenge();
       }
       tabContent.classList.add('fade-in');
     }, 120);
